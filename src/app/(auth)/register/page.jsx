@@ -5,13 +5,16 @@ import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaUserPlus, FaImage } fr
 import { FcGoogle } from 'react-icons/fc';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { signUp, signIn } from '@/lib/auth-client'; // Apnar auth-client.js er path onujayi thik kore neben
+import { signUp, signIn } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
+import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [uploading, setUploading] = useState(false);
   const router = useRouter();
 
   const {
@@ -31,6 +34,7 @@ const RegisterPage = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImageFile(file);
       setValue('profileImage', file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -39,18 +43,32 @@ const RegisterPage = () => {
   const onSubmit = async (data) => {
     setErrorMessage('');
     try {
-      // Better Auth email/password signup
+      let uploadedImageUrl = '';
+
+      // 1. Jodi user image select kore thake, tahoke prothome Cloudinary-te upload korbo
+      if (imageFile) {
+        setUploading(true);
+        uploadedImageUrl = await uploadImageToCloudinary(imageFile);
+        setUploading(false);
+
+        if (!uploadedImageUrl) {
+          setErrorMessage('Image upload failed. Please try again.');
+          return;
+        }
+      }
+
+      // 2. Better Auth email/password signup with Cloudinary image URL (await add kora holo)
       const { data: responseData, error } = await signUp.email({
         email: data.email,
         password: data.password,
         name: data.name,
-        image: imagePreview || undefined, // Image link ba URL hole ekhane dite paren (jodi file base64 ba cloudinary upload koren)
+        image: uploadedImageUrl || undefined,
       }, {
         onRequest: () => {
           // Loading state ba extra kaj thakle ekhane kora jabe
         },
         onSuccess: () => {
-          router.push('/'); // Registration successful hole redirect korbe
+          router.push('/');
         },
         onError: (ctx) => {
           setErrorMessage(ctx.error.message || 'Registration failed');
@@ -62,6 +80,7 @@ const RegisterPage = () => {
       }
     } catch (err) {
       console.error(err);
+      setUploading(false);
       setErrorMessage('Something went wrong. Please try again.');
     }
   };
@@ -250,11 +269,11 @@ const RegisterPage = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || uploading}
                   className="w-full mt-2 flex items-center justify-center space-x-2 py-3.5 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-bold text-sm shadow-lg shadow-blue-500/25 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50"
                 >
                   <FaUserPlus className="text-base" />
-                  <span>{isSubmitting ? 'Creating...' : 'Create Account'}</span>
+                  <span>{uploading ? 'Uploading Image...' : isSubmitting ? 'Creating...' : 'Create Account'}</span>
                 </button>
 
                 {/* Login Redirect Link */}
