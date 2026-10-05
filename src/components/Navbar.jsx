@@ -12,7 +12,9 @@ import {
   FaBell,
   FaBars,
   FaTimes,
-  FaSignInAlt
+  FaSignInAlt,
+  FaUserShield,
+  FaUser
 } from 'react-icons/fa';
 import { authClient } from '@/lib/auth-client';
 import Msseage from './Msseage';
@@ -27,7 +29,18 @@ const Navbar = () => {
   const isLoggedIn = !!session?.user;
   const user = session?.user;
 
-  const isActive = (path) => pathname === path;
+  // ইউজারের রোল চেক করা (admin বা user)
+  const userRole = user?.role || 'user';
+
+  // ড্যাশবোর্ডের সঠিক রুট নির্ধারণ (Admin হলে overview, User হলে profile)
+  const dashboardPath = userRole === 'admin' ? '/dashboard/admin/overview' : '/dashboard/user/profile';
+
+  const isActive = (path) => {
+    if (path === dashboardPath) {
+      return pathname?.startsWith('/dashboard');
+    }
+    return pathname === path;
+  };
 
   return (
     <>
@@ -94,13 +107,13 @@ const Navbar = () => {
 
               {isLoggedIn && (
                 <Link 
-                  href="/dashboard/profile" 
+                  href={dashboardPath} 
                   className={`flex flex-col items-center transition py-1 px-3 ${
-                    isActive('/dashboard/profile') ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-blue-600'
+                    isActive(dashboardPath) ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-blue-600'
                   }`}
                 >
-                  <FaChartLine className="text-xl mb-0.5" />
-                  <span className="text-xs">Dashboard</span>
+                  {userRole === 'admin' ? <FaUserShield className="text-xl mb-0.5" /> : <FaChartLine className="text-xl mb-0.5" />}
+                  <span className="text-xs">{userRole === 'admin' ? 'Admin Dash' : 'Dashboard'}</span>
                 </Link>
               )}
             </div>
@@ -111,7 +124,7 @@ const Navbar = () => {
                 <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               ) : isLoggedIn ? (
                 <>
-                  {/* মেসেজ আইকন (ক্লিক করলে সাইড প্যানেল খুলবে) */}
+                  {/* মেসেজ আইকন */}
                   <button 
                     onClick={() => setActivePanel('messages')}
                     className="relative bg-gray-200 hover:bg-gray-300 p-1.5 sm:p-2.5 rounded-full text-gray-700 transition focus:outline-none"
@@ -120,7 +133,7 @@ const Navbar = () => {
                     <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] sm:text-[10px] w-3.5 sm:w-4 h-3.5 sm:h-4 rounded-full flex items-center justify-center font-bold">3</span>
                   </button>
 
-                  {/* নোটিফিকেশন আইকন (ক্লিক করলে সাইড প্যানেল খুলবে) */}
+                  {/* নোটিফিকেশন আইকন */}
                   <button 
                     onClick={() => setActivePanel('notifications')}
                     className="relative bg-gray-200 hover:bg-gray-300 p-1.5 sm:p-2.5 rounded-full text-gray-700 transition focus:outline-none"
@@ -129,8 +142,8 @@ const Navbar = () => {
                     <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] sm:text-[10px] w-3.5 sm:w-4 h-3.5 sm:h-4 rounded-full flex items-center justify-center font-bold">5</span>
                   </button>
 
-                  {/* প্রোফাইল সেকশন */}
-                  <Link href="/profile" className="flex items-center space-x-1.5 bg-gray-100 hover:bg-gray-200 p-1 rounded-full transition">
+                  {/* প্রোফাইল সেকশন (ড্যাশবোর্ডে রিডাইরেক্ট করবে) */}
+                  <Link href={dashboardPath} className="flex items-center space-x-1.5 bg-gray-100 hover:bg-gray-200 p-1 rounded-full transition">
                     <img 
                       src={user?.image || "https://via.placeholder.com/150"} 
                       alt={user?.name || "Profile"} 
@@ -154,15 +167,12 @@ const Navbar = () => {
       {/* ফেসবুক স্টাইলের ডান পাশের সাইড প্যানেল (Messenger / Notifications) */}
       {activePanel && (
         <div className="fixed inset-0 z-50 flex justify-end pointer-events-none">
-          {/* ব্যাকগ্রাউন্ড ওভারলে */}
           <div 
             className="fixed inset-0 pointer-events-auto bg-black/30 transition-opacity" 
             onClick={() => setActivePanel(null)}
           ></div>
 
-          {/* প্যানেল কন্টেন্ট */}
           <div className="relative flex flex-col w-80 sm:w-96 max-w-full bg-white h-full shadow-2xl z-10 p-4 pointer-events-auto transition-transform transform translate-x-0 border-l border-gray-200">
-            {/* হেডার */}
             <div className="flex items-center justify-between pb-3 border-b border-gray-200 mb-4">
               <h2 className="text-lg font-bold text-gray-800">
                 {activePanel === 'messages' ? 'Chats & Messages' : 'Notifications'}
@@ -175,12 +185,11 @@ const Navbar = () => {
               </button>
             </div>
 
-            {/* ডায়নামিক বডি (এখানে আপনি আপনার মেসেজ বা নোটিফিকেশনের লিস্ট বা কম্পোনেন্ট বসাতে পারবেন) */}
             <div className="flex-1 overflow-y-auto space-y-3">
               {activePanel === 'messages' ? (
                 <Msseage />
               ) : (
-                <Notificaiton></Notificaiton>
+                <Notificaiton />
               )}
             </div>
           </div>
@@ -242,14 +251,14 @@ const Navbar = () => {
 
               {isLoggedIn && (
                 <Link 
-                  href="/dashboard/profile" 
+                  href={dashboardPath} 
                   onClick={() => setIsSidebarOpen(false)} 
                   className={`flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                    isActive('/dashboard/profile') ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'
+                    isActive(dashboardPath) ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <FaChartLine className="text-lg" />
-                  <span>Dashboard</span>
+                  {userRole === 'admin' ? <FaUserShield className="text-lg" /> : <FaChartLine className="text-lg" />}
+                  <span>{userRole === 'admin' ? 'Admin Dashboard' : 'Dashboard'}</span>
                 </Link>
               )}
             </div>

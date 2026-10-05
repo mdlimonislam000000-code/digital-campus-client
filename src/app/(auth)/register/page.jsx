@@ -57,16 +57,15 @@ const RegisterPage = () => {
         }
       }
 
-      // 2. Better Auth email/password signup with Cloudinary image URL (await add kora holo)
+      // 2. Better Auth email/password signup with role: 'user'
       const { data: responseData, error } = await signUp.email({
         email: data.email,
         password: data.password,
         name: data.name,
         image: uploadedImageUrl || undefined,
+        role: 'user', // ডিফল্ট রোল user হিসেবে পাস করা হলো
       }, {
-        onRequest: () => {
-          // Loading state ba extra kaj thakle ekhane kora jabe
-        },
+        onRequest: () => {},
         onSuccess: () => {
           router.push('/');
         },
