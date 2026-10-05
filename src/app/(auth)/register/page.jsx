@@ -1,44 +1,76 @@
 'use client';
 import React, { useState } from 'react';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaUserPlus, FaBuilding, FaIdCard, FaGraduationCap, FaImage } from 'react-icons/fa';
+import { useForm } from 'react-hook-form';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaUserPlus, FaImage } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { signUp, signIn } from '@/lib/auth-client'; // Apnar auth-client.js er path onujayi thik kore neben
+import { useRouter } from 'next/navigation';
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    campusName: 'Kishoreganj Polytechnic Institute',
-    campusCode: '59060',
-    department: 'Computer',
-    profileImage: null,
-  });
-
   const [imagePreview, setImagePreview] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const router = useRouter();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      profileImage: null,
+    },
+  });
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData({ ...formData, profileImage: file });
+      setValue('profileImage', file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Register Data:', formData);
+  const onSubmit = async (data) => {
+    setErrorMessage('');
+    try {
+      // Better Auth email/password signup
+      const { data: responseData, error } = await signUp.email({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        image: imagePreview || undefined, // Image link ba URL hole ekhane dite paren (jodi file base64 ba cloudinary upload koren)
+      }, {
+        onRequest: () => {
+          // Loading state ba extra kaj thakle ekhane kora jabe
+        },
+        onSuccess: () => {
+          router.push('/'); // Registration successful hole redirect korbe
+        },
+        onError: (ctx) => {
+          setErrorMessage(ctx.error.message || 'Registration failed');
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage('Something went wrong. Please try again.');
+    }
   };
 
-  const handleGoogleLogin = () => {
-    console.log('Google login clicked (disabled/dummy)');
+  const handleGoogleLogin = async () => {
+    await signIn.social({
+      provider: 'google',
+      callbackURL: '/',
+    });
   };
 
   return (
@@ -77,7 +109,7 @@ const RegisterPage = () => {
             </h1>
             
             <p className="mt-4 text-gray-300 text-sm leading-relaxed">
-              Register with your institution details to access notices, courses, and department activities smoothly.
+              Create your account now to access notices, courses, and department activities smoothly. You can update your academic profile later.
             </p>
           </div>
 
@@ -96,7 +128,7 @@ const RegisterPage = () => {
               Create Account
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Fill out the form below to get started
+              Enter your details to get started
             </p>
           </div>
 
@@ -104,6 +136,13 @@ const RegisterPage = () => {
           <div className="p-6 sm:p-8 pt-6">
             <div className="max-w-md w-full mx-auto space-y-4">
               
+              {/* Error Alert Box */}
+              {errorMessage && (
+                <div className="p-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl font-medium text-center">
+                  {errorMessage}
+                </div>
+              )}
+
               {/* Google Sign Up Button */}
               <button
                 type="button"
@@ -120,7 +159,7 @@ const RegisterPage = () => {
                 <div className="flex-grow border-t border-gray-200"></div>
               </div>
 
-              <form className="space-y-3.5" onSubmit={handleSubmit}>
+              <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
                 
                 {/* Profile Image Upload */}
                 <div>
@@ -128,11 +167,11 @@ const RegisterPage = () => {
                     Profile Image
                   </label>
                   <div className="flex items-center space-x-3">
-                    <div className="w-11 h-11 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner">
                       {imagePreview ? (
                         <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <FaImage className="text-gray-400 text-base" />
+                        <FaImage className="text-gray-400 text-lg" />
                       )}
                     </div>
                     <input
@@ -155,14 +194,12 @@ const RegisterPage = () => {
                     </span>
                     <input
                       type="text"
-                      name="name"
-                      required
-                      value={formData.name}
-                      onChange={handleChange}
+                      {...register('name', { required: 'Name is required' })}
                       placeholder="Md Limon Mia"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
                     />
                   </div>
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                 </div>
 
                 {/* Email Field */}
@@ -176,78 +213,12 @@ const RegisterPage = () => {
                     </span>
                     <input
                       type="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
+                      {...register('email', { required: 'Email is required' })}
                       placeholder="name@example.com"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
                     />
                   </div>
-                </div>
-
-                {/* Campus Name & Campus Code (Grid) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Campus Name
-                    </label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                        <FaBuilding className="text-sm" />
-                      </span>
-                      <input
-                        type="text"
-                        name="campusName"
-                        required
-                        value={formData.campusName}
-                        onChange={handleChange}
-                        placeholder="Institute Name"
-                        className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Campus Code
-                    </label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                        <FaIdCard className="text-sm" />
-                      </span>
-                      <input
-                        type="text"
-                        name="campusCode"
-                        required
-                        value={formData.campusCode}
-                        onChange={handleChange}
-                        placeholder="e.g. 59060"
-                        className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Department Field */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Department
-                  </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                      <FaGraduationCap className="text-sm" />
-                    </span>
-                    <input
-                      type="text"
-                      name="department"
-                      required
-                      value={formData.department}
-                      onChange={handleChange}
-                      placeholder="e.g. Computer Technology"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
-                    />
-                  </div>
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
 
                 {/* Password Field */}
@@ -261,12 +232,9 @@ const RegisterPage = () => {
                     </span>
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      required
-                      value={formData.password}
-                      onChange={handleChange}
+                      {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Password must be at least 6 characters' } })}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
+                      className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900 font-medium"
                     />
                     <button
                       type="button"
@@ -276,15 +244,17 @@ const RegisterPage = () => {
                       {showPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
                     </button>
                   </div>
+                  {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                 </div>
 
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full mt-4 flex items-center justify-center space-x-2 py-3.5 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-bold text-sm shadow-lg shadow-blue-500/25 transition-all duration-300 transform active:scale-[0.98]"
+                  disabled={isSubmitting}
+                  className="w-full mt-2 flex items-center justify-center space-x-2 py-3.5 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-bold text-sm shadow-lg shadow-blue-500/25 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50"
                 >
                   <FaUserPlus className="text-base" />
-                  <span>Create Account</span>
+                  <span>{isSubmitting ? 'Creating...' : 'Create Account'}</span>
                 </button>
 
                 {/* Login Redirect Link */}

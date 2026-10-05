@@ -1,23 +1,52 @@
 'use client';
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSignInAlt } from 'react-icons/fa';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { signIn } from '@/lib/auth-client'; // Apnar auth-client.js er path onujayi
+import { useRouter } from 'next/navigation';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+  const [errorMessage, setErrorMessage] = useState('');
+  const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: {
+      email: '',
+      password: '',
+      rememberMe: false,
+    },
   });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const onSubmit = async (data) => {
+    setErrorMessage('');
+    try {
+      const { data: responseData, error } = await signIn.email({
+        email: data.email,
+        password: data.password,
+        rememberMe: data.rememberMe,
+      }, {
+        onSuccess: () => {
+          router.push('/'); // Login successful hole homepage ba dashboard-e niye jabe
+        },
+        onError: (ctx) => {
+          setErrorMessage(ctx.error.message || 'Invalid email or password');
+        },
+      });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Login Data:', formData);
+      if (error) {
+        setErrorMessage(error.message);
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage('Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -28,7 +57,7 @@ const LoginPage = () => {
         <img 
           src="/images/campus pic.png" 
           alt="Campus Building" 
-          className="w-full h-full object-cover scale-105 animate-pulse duration-1000"
+          className="w-full h-full object-cover scale-105"
         />
         {/* Rich Dark Blue Gradient Overlay for High Contrast & Readability */}
         <div className="absolute inset-0 bg-gradient-to-tr from-slate-950/90 via-blue-950/70 to-indigo-950/80 backdrop-blur-[2px]"></div>
@@ -89,7 +118,7 @@ const LoginPage = () => {
 
         {/* Right Side Clean Solid Login Form */}
         <div className="lg:col-span-7 p-8 lg:p-10 bg-white/95 backdrop-blur-xl flex flex-col justify-center">
-          <div className="max-w-sm w-full mx-auto space-y-5">
+          <div className="max-w-sm w-full mx-auto space-y-4">
             
             <div>
               <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
@@ -100,7 +129,14 @@ const LoginPage = () => {
               </p>
             </div>
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Error Alert Box */}
+            {errorMessage && (
+              <div className="p-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl font-medium text-center">
+                {errorMessage}
+              </div>
+            )}
+
+            <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
               
               {/* Email Field */}
               <div>
@@ -113,14 +149,12 @@ const LoginPage = () => {
                   </span>
                   <input
                     type="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
+                    {...register('email', { required: 'Email is required' })}
                     placeholder="name@example.com"
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900"
                   />
                 </div>
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
               </div>
 
               {/* Password Field */}
@@ -134,10 +168,7 @@ const LoginPage = () => {
                   </span>
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
+                    {...register('password', { required: 'Password is required' })}
                     placeholder="••••••••"
                     className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-gray-50/50 text-gray-900"
                   />
@@ -149,6 +180,7 @@ const LoginPage = () => {
                     {showPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
                   </button>
                 </div>
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
               </div>
 
               {/* Remember & Forgot */}
@@ -156,6 +188,7 @@ const LoginPage = () => {
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
+                    {...register('rememberMe')}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <span className="ml-2 text-gray-600 font-medium">Remember me</span>
@@ -168,10 +201,11 @@ const LoginPage = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full mt-2 flex items-center justify-center space-x-2 py-3 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-medium text-sm shadow-lg shadow-blue-500/25 transition-all duration-300 transform active:scale-[0.98]"
+                disabled={isSubmitting}
+                className="w-full mt-2 flex items-center justify-center space-x-2 py-3 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-medium text-sm shadow-lg shadow-blue-500/25 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50"
               >
                 <FaSignInAlt />
-                <span>Sign In to Dashboard</span>
+                <span>{isSubmitting ? 'Signing In...' : 'Sign In to Dashboard'}</span>
               </button>
 
               {/* Register Link */}
