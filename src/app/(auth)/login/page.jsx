@@ -4,13 +4,17 @@ import { useForm } from 'react-hook-form';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSignInAlt } from 'react-icons/fa';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { signIn } from '@/lib/auth-client'; // Apnar auth-client.js er path onujayi
+import { signIn } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
+import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
+
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   const {
     register,
@@ -27,13 +31,13 @@ const LoginPage = () => {
   const onSubmit = async (data) => {
     setErrorMessage('');
     try {
-      const { data: responseData, error } = await signIn.email({
+      const { error } = await signIn.email({
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
       }, {
         onSuccess: () => {
-          router.push('/'); // Login successful hole homepage ba dashboard-e niye jabe
+          router.push('/');
         },
         onError: (ctx) => {
           setErrorMessage(ctx.error.message || 'Invalid email or password');
@@ -52,18 +56,17 @@ const LoginPage = () => {
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden p-4 sm:p-6">
       
-      {/* 1. Fullscreen Real Campus Background with Zoom Effect */}
+      {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img 
           src="/images/campus pic.png" 
           alt="Campus Building" 
           className="w-full h-full object-cover scale-105"
         />
-        {/* Rich Dark Blue Gradient Overlay for High Contrast & Readability */}
         <div className="absolute inset-0 bg-gradient-to-tr from-slate-950/90 via-blue-950/70 to-indigo-950/80 backdrop-blur-[2px]"></div>
       </div>
 
-      {/* 2. Floating Glassmorphism Container */}
+      {/* Main Login Card Container */}
       <motion.div 
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -71,52 +74,32 @@ const LoginPage = () => {
         className="relative z-10 max-w-4xl w-full bg-white/10 backdrop-blur-2xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/20 overflow-hidden grid grid-cols-1 lg:grid-cols-12"
       >
         
-        {/* Left Side Branding & Welcome text inside Glass Card */}
+        {/* Left Side Branding */}
         <div className="lg:col-span-5 p-8 lg:p-10 flex flex-col justify-between text-white border-b lg:border-b-0 lg:border-r border-white/10 bg-gradient-to-b from-white/5 to-transparent">
           <div>
-            <motion.span 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="inline-block text-xs uppercase tracking-widest font-semibold bg-blue-500/30 text-blue-200 border border-blue-400/30 px-3.5 py-1.5 rounded-full shadow-inner"
-            >
+            <span className="inline-block text-xs uppercase tracking-widest font-semibold bg-blue-500/30 text-blue-200 border border-blue-400/30 px-3.5 py-1.5 rounded-full shadow-inner">
               Digital Campus v2.0
-            </motion.span>
+            </span>
             
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-2xl lg:text-4xl font-extrabold mt-6 tracking-tight leading-tight text-white drop-shadow-md"
-            >
+            <h1 className="text-2xl lg:text-4xl font-extrabold mt-6 tracking-tight leading-tight text-white drop-shadow-md">
               Your Campus, <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
                 Right in Your Hands!
               </span>
-            </motion.h1>
+            </h1>
             
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="mt-4 text-gray-300 text-xs lg:text-sm leading-relaxed"
-            >
+            <p className="mt-4 text-gray-300 text-xs lg:text-sm leading-relaxed">
               Seamlessly manage all academic activities, student interactions, and department tasks in a unified ecosystem.
-            </motion.p>
+            </p>
           </div>
 
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="mt-8 pt-6 border-t border-white/10 text-xs text-gray-400 flex items-center justify-between"
-          >
+          <div className="mt-8 pt-6 border-t border-white/10 text-xs text-gray-400 flex items-center justify-between">
             <span>Secure Portal</span>
             <span>© 2026 DigitalCampus</span>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Right Side Clean Solid Login Form */}
+        {/* Right Side Login Form */}
         <div className="lg:col-span-7 p-8 lg:p-10 bg-white/95 backdrop-blur-xl flex flex-col justify-center">
           <div className="max-w-sm w-full mx-auto space-y-4">
             
@@ -129,7 +112,6 @@ const LoginPage = () => {
               </p>
             </div>
 
-            {/* Error Alert Box */}
             {errorMessage && (
               <div className="p-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl font-medium text-center">
                 {errorMessage}
@@ -175,7 +157,7 @@ const LoginPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
                   >
                     {showPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
                   </button>
@@ -193,16 +175,21 @@ const LoginPage = () => {
                   />
                   <span className="ml-2 text-gray-600 font-medium">Remember me</span>
                 </label>
-                <a href="#" className="font-semibold text-blue-600 hover:text-blue-700 transition">
+                
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPasswordOpen(true)}
+                  className="font-semibold text-blue-600 hover:text-blue-700 transition cursor-pointer bg-transparent border-none p-0"
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full mt-2 flex items-center justify-center space-x-2 py-3 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-medium text-sm shadow-lg shadow-blue-500/25 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50"
+                className="w-full mt-2 flex items-center justify-center space-x-2 py-3 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-medium text-sm shadow-lg shadow-blue-500/25 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 <FaSignInAlt />
                 <span>{isSubmitting ? 'Signing In...' : 'Sign In to Dashboard'}</span>
@@ -221,6 +208,14 @@ const LoginPage = () => {
         </div>
 
       </motion.div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        isOpen={isForgotPasswordOpen} 
+        onClose={() => setIsForgotPasswordOpen(false)} 
+        setEmail={setUserEmail} 
+      />
+
     </div>
   );
 };

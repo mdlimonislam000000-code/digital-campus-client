@@ -5,12 +5,13 @@ export async function middleware(request) {
   const sessionCookie = getSessionCookie(request);
   const { pathname } = request.nextUrl;
 
-  // Jodi user login na thake ebong se jodi login, register ba sign-up page-e na thake
+  // Jodi user login na thake ebong se jodi login, register, sign-up ba reset-password page-e na thake
   if (
     !sessionCookie &&
     pathname !== "/login" &&
     pathname !== "/register" &&
-    !pathname.startsWith("/sign-up")
+    !pathname.startsWith("/sign-up") &&
+    pathname !== "/reset-password"
   ) {
     return NextResponse.redirect(new URL("/login", request.url));
   }

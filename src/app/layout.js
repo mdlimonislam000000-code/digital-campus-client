@@ -21,15 +21,16 @@ const geistMono = Geist_Mono({
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   
-  // Ekhane '/register' ebong '/login' duitai properly check kora holo
+  // Reset-password সহ সব অথ পেজ চেক করার জন্য শর্ত যোগ করা হলো
   const isAuthPage = 
     pathname === "/login" || 
     pathname === "/register" || 
-    pathname.startsWith("/sign-up");
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/reset-password");
     
   const isDashboard = pathname.startsWith("/dashboard");
 
-  // Jodi login ba register page hoy, tahole shudhu form-er children-ti dekhabe, kono Navbar ba sidebar thakbe na
+  // Jodi auth page hoy (login, register, reset-password), tahole shudhu form-er children-ti dekhabe, kono Navbar ba sidebar thakbe na
   if (isAuthPage) {
     return (
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
