@@ -252,35 +252,6 @@ export default function DashboardLayout({ children }) {
 
       {/* ৩. মেইন কন্টেন্ট এরিয়া */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shadow-sm sticky top-0 z-40">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 text-gray-600 rounded-lg hover:bg-gray-100 cursor-pointer"
-              aria-label="Toggle Mobile Menu"
-            >
-              <FaBars className="w-5 h-5" />
-            </button>
-
-            <h1 className="font-semibold text-base sm:text-lg text-gray-800 truncate">
-              {`Welcome, ${session?.user?.name || (userRole === 'admin' ? 'Admin' : 'Student')}!`}
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {session?.user?.image ? (
-              <img 
-                src={session.user.image} 
-                alt="Profile" 
-                className="w-9 h-9 rounded-full object-cover border-2 border-indigo-500 shadow-sm"
-              />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                {session?.user?.name?.charAt(0) || 'U'}
-              </div>
-            )}
-          </div>
-        </header>
 
         <main className={`p-4 sm:p-6 flex-1 overflow-x-hidden ${isSuspended ? 'pointer-events-none filter blur-sm select-none' : ''}`}>
           {children}
@@ -313,7 +284,7 @@ export default function DashboardLayout({ children }) {
               onClick={handleGoHome}
               className="w-full flex items-center justify-center gap-2 font-bold shadow-md bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl transition-colors cursor-pointer text-sm"
             >
-              <FaLock /> হোম পেজে ফিরে যান
+              <FaLock /> Back to Home
             </button>
           </div>
         </div>
